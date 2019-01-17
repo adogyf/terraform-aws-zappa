@@ -1,4 +1,12 @@
+provider "aws" {}
+
+provider "aws" {
+  alias   = "cloudfront-acm-certs"
+  region  = "us-east-1"
+}
+
 data "aws_acm_certificate" "cert" {
+  provider = "aws.cloudfront-acm-certs"
   count    = "${length(var.domain_names)}"
   domain   = "${element(var.domain_names, count.index)}"
   statuses = ["ISSUED"]
@@ -107,6 +115,7 @@ resource "aws_cloudfront_distribution" "cf_distribution" {
 resource "aws_api_gateway_domain_name" "api" {
   domain_name     = "api.${element(var.domain_names, 0)}"
   certificate_arn = "${element(data.aws_acm_certificate.cert.*.arn, 0)}"
+  regional_certificate_arn = "${data.aws_acm_certificate.cert.arn}"
 }
 
 resource "aws_api_gateway_base_path_mapping" "api_mapping" {
